@@ -96,9 +96,14 @@ class SqlLiteWrapper():
         return current_player
 
 
-    def is_game_active(self, game_id: int) -> bool:
+    def is_game_active(self, game_id: int) -> int:
         self.cur.execute('SELECT game_active FROM games WHERE game_id=(?)', (game_id,))
 
-        result: bool = self.cur.fetchall()[0]
+        result = self.cur.fetchone()[0]
 
-        return bool(result)
+        return result
+
+
+    def set_game_to_inactive(self, game_id: int) -> None:
+        self.cur.execute("UPDATE games SET game_active = ? WHERE game_id = ?", (0, game_id,))
+        self.conn.commit()

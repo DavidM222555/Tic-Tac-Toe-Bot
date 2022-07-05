@@ -74,8 +74,8 @@ class TicTacToeBot(commands.Bot):
             current_game_string = self.sqlWrapper.get_game_string(game_id)
             game_active = self.sqlWrapper.is_game_active(game_id)
 
-            if(not game_active):
-                await ctx.send("Game is over!")
+            if(game_active == 0):
+                await ctx.send("Game is over already!")
                 return
 
             if(player_requesting != current_player):
@@ -105,6 +105,8 @@ class TicTacToeBot(commands.Bot):
 
                     await ctx.send("Here is the final board state: ")
                     await ctx.send(current_board)
+
+                    self.sqlWrapper.set_game_to_inactive(game_id)
 
                 else:
                     await ctx.send("Move successful. Here is the board currently: ")
