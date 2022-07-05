@@ -3,7 +3,10 @@ from discord.ext import commands
 
 from SqlLiteWrapper import SqlLiteWrapper
 from dotenv import load_dotenv
+
 import os
+
+from TicTacToeFuncs import move_legal, make_move, format_game_string_for_output, has_player_won
 
 load_dotenv('.env')
 
@@ -65,5 +68,51 @@ class TicTacToeBot(commands.Bot):
 
         @self.command(name='move', pass_context=True)
         async def move(ctx, game_id, move_string):
-            print("Hello")
+            player_requesting = str(ctx.message.author)
+            player_requesting_id = ctx.message.author.id
+            current_player = self.sqlWrapper.get_current_player(game_id, move_string)
+            current_game_string = self.sqlWrapper.get_game_string(game_id)
+            game_active = self.sqlWrapper.is_game_active(game_id)
+
+            if(not game_active):
+                await ctx.send("Game is over!")
+                return
+
+            if(player_requesting != current_player):
+                await ctx.send("It is not currently your move")
+                return
+
+            move_character = ''
+
+
+            # Determine which move it is based off the last character of the game string
+            if(current_game_string[-1] == 'A'):
+                move_character = 'x'
+            else:
+                move_character = 'o'
+
+            
+            if move_legal(move_string, current_game_string):
+                new_game_string = make_move(move_string, current_game_string, move_character)
+
+                self.sqlWrapper.modify_game_string(game_id, new_game_string)
+                current_board = format_game_string_for_output(new_game_string)
+
+                if(has_player_won(new_game_string, move_character)):
+                    congrats_string = "You won the game " + "<@" + str(player_requesting_id) + "> ! Congrats."
+
+                    await ctx.send(congrats_string)
+
+                    await ctx.send("Here is the final board state: ")
+                    await ctx.send(current_board)
+
+                else:
+                    await ctx.send("Move successful. Here is the board currently: ")
+                    await ctx.send(current_board)
+
+            else:
+                await ctx.send("Move was invalid. Try again")
+            
+
+            
 

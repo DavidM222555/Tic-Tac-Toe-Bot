@@ -12,7 +12,8 @@ class SqlLiteWrapper():
                                 game_id INTEGER PRIMARY KEY,
                                 creator_user TEXT NOT NULL,
                                 opponent_user TEXT NOT NULL,
-                                game_string TEXT NOT NULL
+                                game_string TEXT NOT NULL,
+                                game_active INTEGER
                             )
                         ''')
 
@@ -40,8 +41,8 @@ class SqlLiteWrapper():
     def add_game(self, game_id: int, creator_user: str, opponent_user: str) -> None:
 
         self.cur.execute('''INSERT INTO games
-                            VALUES (?, ?, ?, ?)
-                        ''', (game_id, str(creator_user), str(opponent_user), "---------"))
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (game_id, str(creator_user), str(opponent_user), "---------A", 1))
 
         self.conn.commit()
 
@@ -57,4 +58,47 @@ class SqlLiteWrapper():
         self.cur.execute("UPDATE games SET game_string = ? WHERE game_id = ?", (new_game_string, game_id,))
         self.conn.commit()
 
-    
+
+    def get_creator_player(self, game_id: int):
+        '''
+            Returns the player that started a given game
+        '''
+
+        self.cur.execute("SELECT creator_user FROM games WHERE game_id = (?)", (game_id,))
+
+        return self.cur.fetchone()[0]
+
+
+    def get_opponent_player(self, game_id: int):
+        '''
+            Returns the player that was challenged 
+        '''
+
+        self.cur.execute("SELECT opponent_user FROM games WHERE game_id = (?)", (game_id,))
+
+        return self.cur.fetchone()[0]
+
+
+    def get_current_player(self, game_id: int, game_string: str):
+        '''
+            Returns the player whose move it currently is. 
+            Every game string has at the end either A or B, which symbolizes whether it is the creating player's
+            turn or the opponent's turn
+        '''
+
+        current_player = ""
+
+        if game_string[-1] == 'A':
+            current_player = self.get_creator_player(game_id)
+        else:
+            current_player = self.get_opponent_player(game_id)
+
+        return current_player
+
+
+    def is_game_active(self, game_id: int) -> bool:
+        self.cur.execute('SELECT game_active FROM games WHERE game_id=(?)', (game_id,))
+
+        result: bool = self.cur.fetchall()[0]
+
+        return bool(result)
