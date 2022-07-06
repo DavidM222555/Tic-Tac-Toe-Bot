@@ -1,5 +1,8 @@
-import discord
-from discord.ext import commands
+# import discord
+# from discord.ext import commands
+
+import disnake
+from disnake.ext import commands
 
 from SqlLiteWrapper import SqlLiteWrapper
 from dotenv import load_dotenv
@@ -13,7 +16,11 @@ load_dotenv('.env')
 class TicTacToeBot(commands.Bot):
     
     def __init__(self, *args, **kwargs):
-        super().__init__(command_prefix='$', *args, **kwargs)
+        intents = disnake.Intents.default()
+        intents.members = True 
+        intents.message_content = True 
+
+        super().__init__(command_prefix=commands.when_mentioned_or('$'), intents=intents, *args, **kwargs)
 
         self.add_commands()
         self.sqlWrapper = SqlLiteWrapper()
